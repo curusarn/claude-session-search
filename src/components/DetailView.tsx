@@ -17,10 +17,11 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 	// Calculate available space for messages
 	const terminalHeight = stdout?.rows || 24;
 	const terminalWidth = stdout?.columns || 120;
-	// Overhead: Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + preview section (14) + footer (2) + padding (2)
+	// Overhead: Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + preview (4-14 dynamic) + footer (2) + padding (2)
+	// Conservative estimate using max preview size
 	const uiOverhead = 29;
 	const maxVisibleMessages = Math.max(3, terminalHeight - uiOverhead);
-	const previewMaxLines = 10; // Show up to 10 lines in preview
+	const previewMaxLines = 10; // Limit preview to 10 lines, but box shrinks to content
 
 	// Helper function to check if a message has displayable text content
 	const hasTextContent = (msg: any): boolean => {
@@ -225,7 +226,7 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 							{selectedMessage.message?.role || selectedMessage.type} ({selectedMessageIndex + 1}/{conversationMessages.length})
 						</Text>
 					</Box>
-					<Box flexDirection="column" height={previewMaxLines} width={terminalWidth - 8}>
+					<Box flexDirection="column" width={terminalWidth - 8}>
 						<Text wrap="wrap">
 							{(() => {
 								const fullText = getFullTextContent(selectedMessage);
