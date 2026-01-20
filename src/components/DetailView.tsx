@@ -41,7 +41,8 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 	// Calculate available space for messages
 	const terminalHeight = stdout?.rows || 24;
 	const terminalWidth = stdout?.columns || 120;
-	const uiOverhead = 14; // Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + footer (3)
+	// Overhead: Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + footer (2) + padding (2)
+	const uiOverhead = 17;
 	const maxVisibleMessages = Math.max(3, terminalHeight - uiOverhead);
 
 	const maxScroll = Math.max(0, conversationMessages.length - maxVisibleMessages);
@@ -69,28 +70,28 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 	const visibleMessages = conversationMessages.slice(scrollOffset, scrollOffset + maxVisibleMessages);
 
 	return (
-		<Box flexDirection="column" padding={1}>
+		<Box flexDirection="column" padding={1} height={terminalHeight}>
 			<Box marginBottom={1}>
 				<Text bold color="cyan">Session Details</Text>
 			</Box>
 
 			<Box marginBottom={1} flexDirection="column">
-				<Text>
+				<Box>
 					<Text bold>Directory: </Text>
 					<Text color="green">{session.directory}</Text>
-				</Text>
-				<Text>
+				</Box>
+				<Box>
 					<Text bold>Date: </Text>
 					<Text>{session.timestamp.toLocaleString()}</Text>
-				</Text>
-				<Text>
+				</Box>
+				<Box>
 					<Text bold>Session ID: </Text>
 					<Text dimColor>{session.id}</Text>
-				</Text>
-				<Text>
+				</Box>
+				<Box>
 					<Text bold>Messages: </Text>
 					<Text>{conversationMessages.length}</Text>
-				</Text>
+				</Box>
 			</Box>
 
 			<Box marginBottom={1}>
@@ -137,6 +138,12 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 						</Box>
 					);
 				})}
+				{/* Fill empty space for consistent layout */}
+				{visibleMessages.length < maxVisibleMessages && Array.from({ length: maxVisibleMessages - visibleMessages.length }).map((_, i) => (
+					<Box key={`empty-${i}`}>
+						<Text> </Text>
+					</Box>
+				))}
 			</Box>
 
 			{conversationMessages.length > maxVisibleMessages && (
