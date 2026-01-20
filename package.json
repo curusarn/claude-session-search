@@ -1,23 +1,36 @@
 {
   "name": "claude-session-search",
   "version": "1.0.0",
-  "description": "TUI tool for searching Claude sessions",
+  "description": "TUI tool for searching Claude Code sessions with fuzzy search, detail view, and session forking",
   "type": "module",
   "bin": {
     "claude-sessions": "./dist/index.js"
   },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.tsx",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "claude",
+    "claude-code",
     "search",
     "tui",
-    "terminal"
+    "terminal",
+    "cli",
+    "fuzzy-search",
+    "session-management"
   ],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/curusarn/claude-session-search.git"
+  },
+  "author": "Simon Kobyda",
   "license": "MIT",
   "dependencies": {
     "fuse.js": "^7.0.0",

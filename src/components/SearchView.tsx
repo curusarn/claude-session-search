@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text, useInput, useStdout } from 'ink';
+import { Box, Text, Newline, useInput, useStdout } from 'ink';
 import Fuse from 'fuse.js';
 import { Session, getAllText } from '../utils/sessionScanner.js';
 
@@ -283,17 +283,16 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 			</Box>
 
 			{displaySessions.length > 0 && filteredSessions[selectedIndex] && (
-				<Box marginTop={1} flexDirection="column">
-					<Box>
+				<Box marginTop={1}>
+					<Text>
 						<Text dimColor>Full path:</Text>
 						<Text color="green"> {filteredSessions[selectedIndex].directory}</Text>
-					</Box>
-					<Box>
+						<Newline />
 						<Text dimColor>Date:</Text>
 						<Text> {filteredSessions[selectedIndex].timestamp.toLocaleString()}</Text>
 						<Text dimColor> • </Text>
 						<Text>{getMessageCount(filteredSessions[selectedIndex])} messages</Text>
-					</Box>
+					</Text>
 				</Box>
 			)}
 

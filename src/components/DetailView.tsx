@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text, useInput, useStdout } from 'ink';
+import { Box, Text, Newline, useInput, useStdout } from 'ink';
 import { Session } from '../utils/sessionScanner.js';
 import { spawn } from 'child_process';
 
@@ -141,23 +141,20 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 				<Text bold color="cyan">Session Details</Text>
 			</Box>
 
-			<Box marginBottom={1} flexDirection="column">
-				<Box>
+			<Box marginBottom={1}>
+				<Text>
 					<Text bold>Directory:</Text>
 					<Text color="green"> {session.directory}</Text>
-				</Box>
-				<Box>
+					<Newline />
 					<Text bold>Date:</Text>
 					<Text> {session.timestamp.toLocaleString()}</Text>
-				</Box>
-				<Box>
+					<Newline />
 					<Text bold>Session ID:</Text>
 					<Text dimColor> {session.id}</Text>
-				</Box>
-				<Box>
+					<Newline />
 					<Text bold>Messages:</Text>
 					<Text> {conversationMessages.length}</Text>
-				</Box>
+				</Text>
 			</Box>
 
 			<Box marginBottom={1}>
