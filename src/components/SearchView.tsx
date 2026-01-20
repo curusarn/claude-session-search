@@ -269,12 +269,12 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 			</Box>
 
 			{displaySessions.length > 0 && filteredSessions[selectedIndex] && (
-				<Box marginTop={1} marginBottom={1} flexDirection="column">
-					<Box>
+				<Box marginTop={1} flexDirection="column">
+					<Box flexWrap="wrap">
 						<Text dimColor>Full path: </Text>
 						<Text color="green">{filteredSessions[selectedIndex].directory}</Text>
 					</Box>
-					<Box>
+					<Box marginBottom={1} flexWrap="wrap">
 						<Text dimColor>Date: </Text>
 						<Text>{filteredSessions[selectedIndex].timestamp.toLocaleString()}</Text>
 						<Text dimColor> • </Text>
