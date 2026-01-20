@@ -16,7 +16,7 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 	const [filteredSessions, setFilteredSessions] = useState<Session[]>(sessions);
 	const { stdout } = useStdout();
 
-	// Set up fuzzy search
+	// Set up fuzzy search with combined scoring
 	useEffect(() => {
 		if (!query.trim()) {
 			setFilteredSessions(sessions);
@@ -42,7 +42,27 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 		});
 
 		const results = fuse.search(query);
-		setFilteredSessions(results.map(r => r.item));
+
+		// Calculate combined score: search (70%) + distance (20%) + recency (10%)
+		const now = Date.now();
+		const maxDistance = Math.max(...sessions.map(s => s.distance || 0), 1);
+		const maxAge = Math.max(...sessions.map(s => now - s.timestamp.getTime()), 1);
+
+		const scoredResults = results.map(result => {
+			const searchScore = result.score || 0; // 0 = perfect match, 1 = worst match
+			const distanceScore = (result.item.distance || 0) / maxDistance; // 0 = same dir, 1 = farthest
+			const ageScore = (now - result.item.timestamp.getTime()) / maxAge; // 0 = newest, 1 = oldest
+
+			// Combined score (lower is better)
+			const combinedScore = (searchScore * 0.7) + (distanceScore * 0.2) + (ageScore * 0.1);
+
+			return { ...result, combinedScore };
+		});
+
+		// Sort by combined score
+		scoredResults.sort((a, b) => a.combinedScore - b.combinedScore);
+
+		setFilteredSessions(scoredResults.map(r => r.item));
 		setSelectedIndex(0);
 		setScrollOffset(0);
 	}, [query, sessions]);

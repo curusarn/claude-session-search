@@ -22,6 +22,7 @@ export interface Session {
 	messages: SessionMessage[];
 	timestamp: Date;
 	cwd: string;
+	distance?: number; // Distance from current directory
 }
 
 function extractTextContent(content: string | Array<{ type: string; text?: string; thinking?: string }>): string {
