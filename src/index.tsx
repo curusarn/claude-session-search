@@ -44,10 +44,11 @@ function App() {
 	};
 
 	const handleLaunch = (session: Session) => {
-		// Launch claude in the session's working directory with the session ID
+		// Launch claude in the session's working directory
+		// Using --fork-session to preserve the original session
 		const claudeProcess = spawn(
 			'claude',
-			['--dangerously-skip-permissions', '--session', session.id],
+			['--dangerously-skip-permissions', '--resume', session.id, '--fork-session'],
 			{
 				cwd: session.cwd,
 				stdio: 'inherit',
