@@ -124,19 +124,19 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 			</Box>
 
 			<Box marginBottom={1} flexDirection="column">
-				<Box>
+				<Box flexDirection="row">
 					<Text bold>Directory: </Text>
 					<Text color="green">{session.directory}</Text>
 				</Box>
-				<Box>
+				<Box flexDirection="row">
 					<Text bold>Date: </Text>
 					<Text>{session.timestamp.toLocaleString()}</Text>
 				</Box>
-				<Box>
+				<Box flexDirection="row">
 					<Text bold>Session ID: </Text>
 					<Text dimColor>{session.id}</Text>
 				</Box>
-				<Box>
+				<Box flexDirection="row">
 					<Text bold>Messages: </Text>
 					<Text>{conversationMessages.length}</Text>
 				</Box>
