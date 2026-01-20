@@ -11,6 +11,7 @@ interface DetailViewProps {
 
 export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 	const [scrollOffset, setScrollOffset] = useState(0);
+	const [selectedMessageIndex, setSelectedMessageIndex] = useState(0);
 	const { stdout } = useStdout();
 
 	// Helper function to check if a message has displayable text content
@@ -41,8 +42,8 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 	// Calculate available space for messages
 	const terminalHeight = stdout?.rows || 24;
 	const terminalWidth = stdout?.columns || 120;
-	// Overhead: Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + footer (2) + padding (2)
-	const uiOverhead = 17;
+	// Overhead: Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + preview section (6) + footer (2) + padding (2)
+	const uiOverhead = 21;
 	const maxVisibleMessages = Math.max(3, terminalHeight - uiOverhead);
 
 	const maxScroll = Math.max(0, conversationMessages.length - maxVisibleMessages);
@@ -53,21 +54,67 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 		} else if (key.return) {
 			onLaunch(session);
 		} else if (key.upArrow || (key.ctrl && input === 'k')) {
-			setScrollOffset(prev => Math.max(0, prev - 1));
+			setSelectedMessageIndex(prev => {
+				const newIndex = Math.max(0, prev - 1);
+				// Scroll up if needed
+				if (newIndex < scrollOffset) {
+					setScrollOffset(newIndex);
+				}
+				return newIndex;
+			});
 		} else if (key.downArrow || (key.ctrl && input === 'j')) {
-			setScrollOffset(prev => Math.min(maxScroll, prev + 1));
+			setSelectedMessageIndex(prev => {
+				const newIndex = Math.min(conversationMessages.length - 1, prev + 1);
+				// Scroll down if needed
+				if (newIndex >= scrollOffset + maxVisibleMessages) {
+					setScrollOffset(newIndex - maxVisibleMessages + 1);
+				}
+				return newIndex;
+			});
 		} else if (key.pageUp || (key.ctrl && input === 'u')) {
-			setScrollOffset(prev => Math.max(0, prev - Math.floor(maxVisibleMessages / 2)));
+			setSelectedMessageIndex(prev => {
+				const newIndex = Math.max(0, prev - Math.floor(maxVisibleMessages / 2));
+				setScrollOffset(Math.max(0, newIndex));
+				return newIndex;
+			});
 		} else if (key.pageDown || (key.ctrl && input === 'd')) {
-			setScrollOffset(prev => Math.min(maxScroll, prev + Math.floor(maxVisibleMessages / 2)));
+			setSelectedMessageIndex(prev => {
+				const newIndex = Math.min(conversationMessages.length - 1, prev + Math.floor(maxVisibleMessages / 2));
+				setScrollOffset(Math.min(maxScroll, newIndex));
+				return newIndex;
+			});
 		} else if (key.ctrl && input === 'g') {
+			setSelectedMessageIndex(0);
 			setScrollOffset(0);
 		} else if (key.shift && input === 'G') {
+			setSelectedMessageIndex(conversationMessages.length - 1);
 			setScrollOffset(maxScroll);
 		}
 	});
 
 	const visibleMessages = conversationMessages.slice(scrollOffset, scrollOffset + maxVisibleMessages);
+
+	// Helper to extract full text content from a message
+	const getFullTextContent = (msg: any): string => {
+		const content = msg.message?.content;
+		let textContent = '';
+
+		if (typeof content === 'string') {
+			textContent = content;
+		} else if (Array.isArray(content)) {
+			textContent = content
+				.map(item => {
+					if ('text' in item) return item.text;
+					return '';
+				})
+				.filter(Boolean)
+				.join('\n\n');
+		}
+
+		return textContent.trim();
+	};
+
+	const selectedMessage = conversationMessages[selectedMessageIndex];
 
 	return (
 		<Box flexDirection="column" padding={1} height={terminalHeight}>
@@ -99,42 +146,40 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 			</Box>
 
 			<Box flexDirection="column" marginBottom={1} minHeight={maxVisibleMessages}>
-				{visibleMessages.map((msg, index) => {
+				{visibleMessages.map((msg, displayIndex) => {
+					const absoluteIndex = scrollOffset + displayIndex;
+					const isSelected = absoluteIndex === selectedMessageIndex;
 					const role = msg.message?.role || msg.type;
-					const content = msg.message?.content;
-					let textContent = '';
-
-					if (typeof content === 'string') {
-						textContent = content;
-					} else if (Array.isArray(content)) {
-						textContent = content
-							.map(item => {
-								if ('text' in item) return item.text;
-								// Skip thinking blocks entirely
-								return '';
-							})
-							.filter(Boolean)
-							.join(' ');
-					}
-
-					// Clean up the text content - preserve single spaces but remove newlines
-					const cleanText = textContent.replace(/\s+/g, ' ').trim();
+					const fullText = getFullTextContent(msg);
 
 					// Skip messages with no text content
-					if (!cleanText) {
+					if (!fullText) {
 						return null;
 					}
 
-					// Account for role label (10 chars) + space (1) + ellipsis (3) + padding (15)
+					// Clean up for inline preview - preserve single spaces but remove newlines
+					const cleanText = fullText.replace(/\s+/g, ' ').trim();
 					const availableWidth = terminalWidth - 29;
 					const maxPreviewLength = Math.max(30, Math.min(availableWidth, 150));
 					const preview = cleanText.slice(0, maxPreviewLength);
 					const roleColor = role === 'user' ? 'yellow' : role === 'assistant' ? 'blue' : 'gray';
 
 					return (
-						<Box key={msg.uuid || index} marginBottom={0} flexWrap="nowrap">
-							<Text color={roleColor} bold>{role.padEnd(10)}</Text>
-							<Text wrap="truncate"> {preview}{preview.length < cleanText.length && '...'}</Text>
+						<Box key={msg.uuid || displayIndex} marginBottom={0} flexWrap="nowrap">
+							<Text
+								color={isSelected ? 'white' : roleColor}
+								bold
+								backgroundColor={isSelected ? 'blue' : undefined}
+							>
+								{isSelected ? '> ' : '  '}{role.padEnd(8)}
+							</Text>
+							<Text
+								wrap="truncate"
+								color={isSelected ? 'white' : undefined}
+								backgroundColor={isSelected ? 'blue' : undefined}
+							>
+								{' '}{preview}{preview.length < cleanText.length && '...'}
+							</Text>
 						</Box>
 					);
 				})}
@@ -154,9 +199,26 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 				</Box>
 			)}
 
+			{/* Message preview panel */}
+			{selectedMessage && (
+				<Box marginBottom={1} flexDirection="column" borderStyle="single" borderColor="cyan" padding={1}>
+					<Box marginBottom={1}>
+						<Text bold color="cyan">
+							{selectedMessage.message?.role || selectedMessage.type} ({selectedMessageIndex + 1}/{conversationMessages.length})
+						</Text>
+					</Box>
+					<Box flexDirection="column">
+						<Text>
+							{getFullTextContent(selectedMessage).split('\n').slice(0, 4).join('\n')}
+							{getFullTextContent(selectedMessage).split('\n').length > 4 && '\n...'}
+						</Text>
+					</Box>
+				</Box>
+			)}
+
 			<Box marginTop={1}>
 				<Text dimColor>
-					↑/↓: Scroll | Ctrl+U/D: Half-page | g/G: Top/Bottom | Enter: Fork in Claude | Esc: Back | Ctrl+C: Exit
+					↑/↓: Navigate | Ctrl+U/D: Half-page | g/G: Top/Bottom | Enter: Fork in Claude | Esc: Back | Ctrl+C: Exit
 				</Text>
 			</Box>
 		</Box>
