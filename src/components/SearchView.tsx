@@ -191,7 +191,7 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 	}
 
 	return (
-		<Box flexDirection="column" padding={1}>
+		<Box flexDirection="column" padding={1} height={terminalHeight}>
 			<Box marginBottom={1}>
 				<Text bold color="cyan">Claude Session Search</Text>
 				<Text> </Text>
@@ -211,7 +211,7 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 				</Text>
 			</Box>
 
-			<Box flexDirection="column">
+			<Box flexDirection="column" minHeight={maxVisibleRows}>
 				{displaySessions.map((session, displayIndex) => {
 					const actualIndex = scrollOffset + displayIndex;
 					const isSelected = actualIndex === selectedIndex;
@@ -233,6 +233,12 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 						</Box>
 					);
 				})}
+				{/* Fill empty space to clear old content */}
+				{displaySessions.length < maxVisibleRows && Array.from({ length: maxVisibleRows - displaySessions.length }).map((_, i) => (
+					<Box key={`empty-${i}`}>
+						<Text> </Text>
+					</Box>
+				))}
 			</Box>
 
 			{displaySessions.length > 0 && filteredSessions[selectedIndex] && (

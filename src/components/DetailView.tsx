@@ -13,9 +13,29 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 	const [scrollOffset, setScrollOffset] = useState(0);
 	const { stdout } = useStdout();
 
+	// Helper function to check if a message has displayable text content
+	const hasTextContent = (msg: any): boolean => {
+		const content = msg.message?.content;
+		if (!content) return false;
+
+		if (typeof content === 'string') {
+			return content.trim().length > 0;
+		}
+
+		if (Array.isArray(content)) {
+			return content.some(item =>
+				(item.text && item.text.trim().length > 0) ||
+				(item.thinking && item.thinking.trim().length > 0)
+			);
+		}
+
+		return false;
+	};
+
 	// Get user and assistant messages only (skip file-history-snapshot and other system messages)
+	// Also filter out messages with no text content (tool-use-only messages)
 	const conversationMessages = session.messages.filter(
-		msg => msg.type === 'user' || msg.type === 'assistant'
+		msg => (msg.type === 'user' || msg.type === 'assistant') && hasTextContent(msg)
 	);
 
 	// Calculate available space for messages
@@ -98,6 +118,12 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 
 					// Clean up the text content
 					const cleanText = textContent.replace(/\s+/g, ' ').trim();
+
+					// Skip messages with no text content
+					if (!cleanText) {
+						return null;
+					}
+
 					const maxPreviewLength = Math.min(terminalWidth - 15, 150);
 					const preview = cleanText.slice(0, maxPreviewLength).replace(/\n/g, ' ');
 					const roleColor = role === 'user' ? 'yellow' : role === 'assistant' ? 'blue' : 'gray';
