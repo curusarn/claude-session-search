@@ -269,23 +269,15 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 			</Box>
 
 			{displaySessions.length > 0 && filteredSessions[selectedIndex] && (
-				<Box marginTop={1} marginBottom={1} flexDirection="column">
-					<Box>
-						<Text dimColor>Full path: </Text>
-						<Text color="green">{filteredSessions[selectedIndex].directory}</Text>
-					</Box>
-					<Box>
-						<Text dimColor>Date: </Text>
-						<Text>{filteredSessions[selectedIndex].timestamp.toLocaleString()}</Text>
-						<Text dimColor> • </Text>
-						<Text>{getMessageCount(filteredSessions[selectedIndex])} messages</Text>
-					</Box>
+				<Box marginTop={1} flexDirection="column">
+					<Text><Text dimColor>Full path: </Text><Text color="green">{filteredSessions[selectedIndex].directory}</Text></Text>
+					<Text><Text dimColor>Date: </Text><Text>{filteredSessions[selectedIndex].timestamp.toLocaleString()}</Text><Text dimColor> • </Text><Text>{getMessageCount(filteredSessions[selectedIndex])} messages</Text></Text>
 				</Box>
 			)}
 
 			{/* Scroll indicator */}
 			{filteredSessions.length > maxVisibleRows && (
-				<Box marginTop={1}>
+				<Box marginTop={1} marginBottom={1}>
 					<Text dimColor>
 						Showing {scrollOffset + 1}-{Math.min(scrollOffset + maxVisibleRows, filteredSessions.length)} of {filteredSessions.length}
 					</Text>
