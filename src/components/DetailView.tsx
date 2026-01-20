@@ -226,7 +226,7 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 							{selectedMessage.message?.role || selectedMessage.type} ({selectedMessageIndex + 1}/{conversationMessages.length})
 						</Text>
 					</Box>
-					<Box flexDirection="column" width={terminalWidth - 8}>
+					<Box flexDirection="column">
 						<Text wrap="wrap">
 							{(() => {
 								const fullText = getFullTextContent(selectedMessage);
