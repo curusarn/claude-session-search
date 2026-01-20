@@ -41,9 +41,11 @@ function extractTextContent(content: string | Array<{ type: string; text?: strin
 }
 
 function pathToDirectory(projectName: string): string {
-	// Convert project name like "-Users-simon-git-myproject" back to "/Users/simon/git/myproject"
+	// Keep the encoded project name but strip the leading dash
+	// We can't reliably decode because we don't know which dashes were originally
+	// path separators vs dashes in the directory name (e.g., "infrastructure-as-ruby")
 	if (projectName.startsWith('-')) {
-		return projectName.substring(1).replace(/-/g, '/');
+		return projectName.substring(1);
 	}
 	return projectName;
 }
@@ -93,7 +95,7 @@ export async function scanSessions(currentDir: string): Promise<Session[]> {
 
 				if (!firstUserMessage?.message?.content) continue;
 
-				const directory = pathToDirectory(projectDir);
+				const encodedDirectory = pathToDirectory(projectDir);
 				const firstMessage = extractTextContent(firstUserMessage.message.content);
 
 				// Skip sessions with system/command messages or just "Warmup"
@@ -109,7 +111,10 @@ export async function scanSessions(currentDir: string): Promise<Session[]> {
 				const timestamp = firstUserMessage.timestamp
 					? new Date(firstUserMessage.timestamp)
 					: new Date(0);
-				const cwd = firstUserMessage.cwd || directory;
+				// Use the actual cwd from the session, fall back to encoded directory
+				const cwd = firstUserMessage.cwd || encodedDirectory;
+				// Use cwd for display purposes too since it's the real path
+				const directory = cwd;
 
 				sessions.push({
 					id: sessionId,

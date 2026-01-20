@@ -41,8 +41,8 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 	// Calculate available space for messages
 	const terminalHeight = stdout?.rows || 24;
 	const terminalWidth = stdout?.columns || 120;
-	const uiOverhead = 11; // Header, metadata, footer, etc.
-	const maxVisibleMessages = Math.max(5, terminalHeight - uiOverhead);
+	const uiOverhead = 14; // Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + footer (3)
+	const maxVisibleMessages = Math.max(3, terminalHeight - uiOverhead);
 
 	const maxScroll = Math.max(0, conversationMessages.length - maxVisibleMessages);
 

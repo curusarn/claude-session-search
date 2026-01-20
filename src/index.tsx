@@ -44,12 +44,12 @@ function App() {
 	};
 
 	const handleLaunch = (session: Session) => {
-		// Launch claude in the session directory with the session ID
+		// Launch claude in the session's working directory with the session ID
 		const claudeProcess = spawn(
 			'claude',
 			['--dangerously-skip-permissions', '--session', session.id],
 			{
-				cwd: session.directory,
+				cwd: session.cwd,
 				stdio: 'inherit',
 			}
 		);

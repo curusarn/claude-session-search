@@ -129,7 +129,7 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 	// Helper function to shorten directory path
 	const shortenPath = (path: string, maxLength: number = 25): string => {
 		if (path.length <= maxLength) return path;
-		const parts = path.split('/');
+		const parts = path.split('/').filter(p => p);
 		if (parts.length <= 2) return path;
 
 		// Show last 2-3 parts
