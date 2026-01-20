@@ -95,6 +95,13 @@ export async function scanSessions(currentDir: string): Promise<Session[]> {
 
 				const directory = pathToDirectory(projectDir);
 				const firstMessage = extractTextContent(firstUserMessage.message.content);
+
+				// Skip sessions with system/command messages or just "Warmup"
+				if (!firstMessage || firstMessage.trim().length === 0) continue;
+				if (firstMessage.toLowerCase() === 'warmup') continue;
+				if (firstMessage.startsWith('<command-message>')) continue;
+				if (firstMessage.startsWith('{') && firstMessage.includes('"hooks"')) continue;
+
 				const timestamp = firstUserMessage.timestamp
 					? new Date(firstUserMessage.timestamp)
 					: new Date(0);
