@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { render, Box, Text } from 'ink';
+import Spinner from 'ink-spinner';
 import { scanSessions, Session } from './utils/sessionScanner.js';
 import { SearchView } from './components/SearchView.js';
 import { DetailView } from './components/DetailView.js';
@@ -67,7 +68,10 @@ function App() {
 	if (loading) {
 		return (
 			<Box padding={1}>
-				<Text>Loading sessions...</Text>
+				<Text color="cyan">
+					<Spinner type="dots" />
+				</Text>
+				<Text> Scanning Claude sessions...</Text>
 			</Box>
 		);
 	}

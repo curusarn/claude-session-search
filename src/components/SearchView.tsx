@@ -21,6 +21,7 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 		if (!query.trim()) {
 			setFilteredSessions(sessions);
 			setSelectedIndex(0);
+			setScrollOffset(0);
 			return;
 		}
 
@@ -43,7 +44,15 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 		const results = fuse.search(query);
 		setFilteredSessions(results.map(r => r.item));
 		setSelectedIndex(0);
+		setScrollOffset(0);
 	}, [query, sessions]);
+
+	// Ensure selectedIndex is always within bounds
+	useEffect(() => {
+		if (selectedIndex >= filteredSessions.length && filteredSessions.length > 0) {
+			setSelectedIndex(filteredSessions.length - 1);
+		}
+	}, [filteredSessions, selectedIndex]);
 
 	// Calculate available space for results
 	const terminalHeight = stdout?.rows || 24;
@@ -200,7 +209,7 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 				})}
 			</Box>
 
-			{displaySessions.length > 0 && (
+			{displaySessions.length > 0 && filteredSessions[selectedIndex] && (
 				<Box marginTop={1} flexDirection="column">
 					<Box>
 						<Text dimColor>
