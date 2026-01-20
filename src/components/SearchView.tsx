@@ -284,8 +284,16 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 
 			{displaySessions.length > 0 && filteredSessions[selectedIndex] && (
 				<Box marginTop={1} flexDirection="column">
-					<Box><Text>Full path: {filteredSessions[selectedIndex].directory}</Text></Box>
-					<Box><Text>Date: {filteredSessions[selectedIndex].timestamp.toLocaleString()} • {getMessageCount(filteredSessions[selectedIndex])} messages</Text></Box>
+					<Box>
+						<Text dimColor>Full path:</Text>
+						<Text color="green"> {filteredSessions[selectedIndex].directory}</Text>
+					</Box>
+					<Box>
+						<Text dimColor>Date:</Text>
+						<Text> {filteredSessions[selectedIndex].timestamp.toLocaleString()}</Text>
+						<Text dimColor> • </Text>
+						<Text>{getMessageCount(filteredSessions[selectedIndex])} messages</Text>
+					</Box>
 				</Box>
 			)}
 
