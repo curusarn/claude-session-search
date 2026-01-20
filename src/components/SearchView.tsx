@@ -56,8 +56,17 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 
 	// Calculate available space for results
 	const terminalHeight = stdout?.rows || 24;
+	const terminalWidth = stdout?.columns || 120;
 	const uiOverhead = 8; // Header, search box, status, footer, etc.
 	const maxVisibleRows = Math.max(5, terminalHeight - uiOverhead);
+
+	// Calculate responsive column widths
+	const minWidth = 80;
+	const isNarrow = terminalWidth < 100;
+	const messageWidth = isNarrow ? Math.max(30, terminalWidth - 40) : Math.min(58, terminalWidth - 50);
+	const dirWidth = isNarrow ? 15 : 26;
+	const msgCountWidth = 6;
+	const timeWidth = 8;
 
 	// Update scroll offset when selection changes
 	useEffect(() => {
@@ -138,6 +147,23 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 		return session.messages.filter(m => m.type === 'user' || m.type === 'assistant').length;
 	};
 
+	// Warn about very narrow terminals
+	if (terminalWidth < 80) {
+		return (
+			<Box flexDirection="column" padding={1}>
+				<Box marginBottom={1}>
+					<Text bold color="yellow">Terminal too narrow</Text>
+				</Box>
+				<Box>
+					<Text>
+						Please resize your terminal to at least 80 columns wide.
+						Current width: {terminalWidth} columns.
+					</Text>
+				</Box>
+			</Box>
+		);
+	}
+
 	if (filteredSessions.length === 0) {
 		return (
 			<Box flexDirection="column" padding={1}>
@@ -181,7 +207,7 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 			{/* Header row */}
 			<Box marginBottom={0}>
 				<Text dimColor bold>
-					{'  MESSAGE'.padEnd(60)} {'MSGS'.padEnd(6)} {'DIRECTORY'.padEnd(26)} {'TIME'}
+					{'  MESSAGE'.padEnd(messageWidth + 2)} {'MSGS'.padEnd(msgCountWidth)} {'DIRECTORY'.padEnd(dirWidth)} {'TIME'}
 				</Text>
 			</Box>
 
@@ -189,15 +215,15 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 				{displaySessions.map((session, displayIndex) => {
 					const actualIndex = scrollOffset + displayIndex;
 					const isSelected = actualIndex === selectedIndex;
-					const firstMessagePreview = session.firstMessage.slice(0, 53).replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-					const shortDir = shortenPath(session.directory, 24);
+					const firstMessagePreview = session.firstMessage.slice(0, messageWidth - 5).replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+					const shortDir = shortenPath(session.directory, dirWidth - 2);
 					const relTime = getRelativeTime(session.timestamp);
 					const msgCount = getMessageCount(session);
 
-					const messageCol = (firstMessagePreview + (firstMessagePreview.length < session.firstMessage.length ? '...' : '')).padEnd(58);
-					const msgCountCol = msgCount.toString().padEnd(6);
-					const dirCol = shortDir.padEnd(26);
-					const timeCol = relTime.padEnd(8);
+					const messageCol = (firstMessagePreview + (firstMessagePreview.length < session.firstMessage.length ? '...' : '')).padEnd(messageWidth);
+					const msgCountCol = msgCount.toString().padEnd(msgCountWidth);
+					const dirCol = shortDir.padEnd(dirWidth);
+					const timeCol = relTime.padEnd(timeWidth);
 
 					return (
 						<Box key={session.id}>
