@@ -61,9 +61,6 @@ function App() {
 			}
 			process.exit(code || 0);
 		});
-
-		// Exit the current process since we're launching claude
-		process.exit(0);
 	};
 
 	if (loading) {

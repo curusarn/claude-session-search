@@ -287,7 +287,7 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 
 			{/* Scroll indicator */}
 			{filteredSessions.length > maxVisibleRows && (
-				<Box marginTop={0}>
+				<Box marginTop={1}>
 					<Text dimColor>
 						Showing {scrollOffset + 1}-{Math.min(scrollOffset + maxVisibleRows, filteredSessions.length)} of {filteredSessions.length}
 					</Text>
