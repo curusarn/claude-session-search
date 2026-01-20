@@ -58,13 +58,25 @@ claude-sessions
 
 ## How it works
 
-The tool scans `~/.claude/projects/` for all session files, indexes their content, and provides a fuzzy search interface. Sessions from directories closer to your current working directory are prioritized in the results.
+The tool scans `~/.claude/projects/` for all session files, indexes their content, and provides a fuzzy search interface.
 
-The output includes:
+### Smart Scoring Algorithm
+
+Results are ranked using a combined score that considers three factors:
+- **Search relevance (70%)**: How well the content matches your query
+- **Directory proximity (20%)**: Distance from your current working directory
+- **Recency (10%)**: How recent the session is
+
+This ensures the most relevant results appear first, with nearby and recent sessions getting a slight boost.
+
+### Output Columns
+
 - **MESSAGE**: First message from the session (truncated to fit)
 - **MSGS**: Number of conversation messages in the session
 - **DIRECTORY**: Shortened directory path (last 2-3 segments)
 - **TIME**: Relative time (e.g., "2d ago", "3h ago")
+
+### Filtering
 
 System messages like "Warmup", "claim", and command invocations are automatically filtered out.
 

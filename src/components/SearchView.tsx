@@ -80,11 +80,18 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 	const uiOverhead = 8; // Header, search box, status, footer, etc.
 	const maxVisibleRows = Math.max(5, terminalHeight - uiOverhead);
 
-	// Calculate responsive column widths
+	// Calculate responsive column widths with safety margin
 	const minWidth = 80;
 	const isNarrow = terminalWidth < 100;
-	const messageWidth = isNarrow ? Math.max(30, terminalWidth - 40) : Math.min(58, terminalWidth - 50);
-	const dirWidth = isNarrow ? 15 : 26;
+	const safetyMargin = 5; // Extra buffer to prevent wrapping
+	const fixedWidth = 2 + 1 + 6 + 1 + 1 + 8 + safetyMargin; // selector + spaces + msgCount + time + margin
+	const availableWidth = Math.max(45, terminalWidth - fixedWidth);
+
+	// Distribute available width between message and directory
+	const messageWidth = isNarrow
+		? Math.max(25, Math.floor(availableWidth * 0.65))
+		: Math.max(35, Math.min(58, Math.floor(availableWidth * 0.65)));
+	const dirWidth = Math.max(12, availableWidth - messageWidth);
 	const msgCountWidth = 6;
 	const timeWidth = 8;
 
@@ -246,8 +253,8 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 					const timeCol = relTime.padEnd(timeWidth);
 
 					return (
-						<Box key={session.id}>
-							<Text backgroundColor={isSelected ? 'blue' : undefined} color={isSelected ? 'white' : undefined}>
+						<Box key={session.id} flexWrap="nowrap">
+							<Text backgroundColor={isSelected ? 'blue' : undefined} color={isSelected ? 'white' : undefined} wrap="truncate-end">
 								{isSelected ? '> ' : '  '}{messageCol} <Text dimColor={!isSelected}>{msgCountCol}</Text> <Text dimColor={!isSelected}>{dirCol}</Text> <Text color={isSelected ? 'white' : 'yellow'}>{timeCol}</Text>
 							</Text>
 						</Box>

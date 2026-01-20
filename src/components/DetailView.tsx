@@ -97,7 +97,7 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 				<Text bold>Conversation:</Text>
 			</Box>
 
-			<Box flexDirection="column" marginBottom={1}>
+			<Box flexDirection="column" marginBottom={1} minHeight={maxVisibleMessages}>
 				{visibleMessages.map((msg, index) => {
 					const role = msg.message?.role || msg.type;
 					const content = msg.message?.content;
@@ -116,7 +116,7 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 							.join(' ');
 					}
 
-					// Clean up the text content
+					// Clean up the text content - preserve single spaces but remove newlines
 					const cleanText = textContent.replace(/\s+/g, ' ').trim();
 
 					// Skip messages with no text content
@@ -124,14 +124,16 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 						return null;
 					}
 
-					const maxPreviewLength = Math.min(terminalWidth - 15, 150);
-					const preview = cleanText.slice(0, maxPreviewLength).replace(/\n/g, ' ');
+					// Account for role label (10 chars) + space (1) + ellipsis (3) + padding (15)
+					const availableWidth = terminalWidth - 29;
+					const maxPreviewLength = Math.max(30, Math.min(availableWidth, 150));
+					const preview = cleanText.slice(0, maxPreviewLength);
 					const roleColor = role === 'user' ? 'yellow' : role === 'assistant' ? 'blue' : 'gray';
 
 					return (
-						<Box key={msg.uuid || index} marginBottom={0}>
+						<Box key={msg.uuid || index} marginBottom={0} flexWrap="nowrap">
 							<Text color={roleColor} bold>{role.padEnd(10)}</Text>
-							<Text> {preview}{preview.length < cleanText.length && '...'}</Text>
+							<Text wrap="truncate"> {preview}{preview.length < cleanText.length && '...'}</Text>
 						</Box>
 					);
 				})}
