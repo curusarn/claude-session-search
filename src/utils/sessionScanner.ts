@@ -98,9 +98,13 @@ export async function scanSessions(currentDir: string): Promise<Session[]> {
 
 				// Skip sessions with system/command messages or just "Warmup"
 				if (!firstMessage || firstMessage.trim().length === 0) continue;
-				if (firstMessage.toLowerCase() === 'warmup') continue;
+				const lowerMessage = firstMessage.toLowerCase().trim();
+				if (lowerMessage === 'warmup') continue;
+				if (lowerMessage === 'claim') continue;
 				if (firstMessage.startsWith('<command-message>')) continue;
+				if (firstMessage.startsWith('<command-name>')) continue;
 				if (firstMessage.startsWith('{') && firstMessage.includes('"hooks"')) continue;
+				if (firstMessage.length < 3) continue; // Skip very short messages
 
 				const timestamp = firstUserMessage.timestamp
 					? new Date(firstUserMessage.timestamp)

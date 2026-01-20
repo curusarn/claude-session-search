@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text, useInput, useStdout } from 'ink';
 import Fuse from 'fuse.js';
 import { Session, getAllText } from '../utils/sessionScanner.js';
 
@@ -12,7 +12,9 @@ interface SearchViewProps {
 export function SearchView({ sessions, onSelectSession, initialQuery = '' }: SearchViewProps) {
 	const [query, setQuery] = useState(initialQuery);
 	const [selectedIndex, setSelectedIndex] = useState(0);
+	const [scrollOffset, setScrollOffset] = useState(0);
 	const [filteredSessions, setFilteredSessions] = useState<Session[]>(sessions);
+	const { stdout } = useStdout();
 
 	// Set up fuzzy search
 	useEffect(() => {
@@ -43,23 +45,51 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 		setSelectedIndex(0);
 	}, [query, sessions]);
 
+	// Calculate available space for results
+	const terminalHeight = stdout?.rows || 24;
+	const uiOverhead = 8; // Header, search box, status, footer, etc.
+	const maxVisibleRows = Math.max(5, terminalHeight - uiOverhead);
+
+	// Update scroll offset when selection changes
+	useEffect(() => {
+		if (selectedIndex < scrollOffset) {
+			setScrollOffset(selectedIndex);
+		} else if (selectedIndex >= scrollOffset + maxVisibleRows) {
+			setScrollOffset(selectedIndex - maxVisibleRows + 1);
+		}
+	}, [selectedIndex, maxVisibleRows]);
+
 	useInput((input, key) => {
 		if (key.return) {
 			if (filteredSessions.length > 0) {
 				onSelectSession(filteredSessions[selectedIndex]);
 			}
-		} else if (key.upArrow) {
+		} else if (key.upArrow || (key.ctrl && input === 'k')) {
 			setSelectedIndex(prev => Math.max(0, prev - 1));
-		} else if (key.downArrow) {
+		} else if (key.downArrow || (key.ctrl && input === 'j')) {
 			setSelectedIndex(prev => Math.min(filteredSessions.length - 1, prev + 1));
+		} else if (key.pageUp || (key.ctrl && input === 'u')) {
+			setSelectedIndex(prev => Math.max(0, prev - Math.floor(maxVisibleRows / 2)));
+		} else if (key.pageDown || (key.ctrl && input === 'd')) {
+			setSelectedIndex(prev => Math.min(filteredSessions.length - 1, prev + Math.floor(maxVisibleRows / 2)));
+		} else if (key.ctrl && input === 'g') {
+			setSelectedIndex(0);
+		} else if (key.shift && input === 'G') {
+			setSelectedIndex(filteredSessions.length - 1);
 		} else if (key.backspace || key.delete) {
 			setQuery(prev => prev.slice(0, -1));
-		} else if (input && !key.ctrl && !key.meta) {
+		} else if (key.ctrl && input === 'w') {
+			// Delete word
+			setQuery(prev => prev.replace(/\s*\S+\s*$/, ''));
+		} else if (input && !key.ctrl && !key.meta && !key.shift) {
+			setQuery(prev => prev + input);
+		} else if (key.shift && input && input.length === 1) {
+			// Handle uppercase letters
 			setQuery(prev => prev + input);
 		}
 	});
 
-	const displaySessions = filteredSessions.slice(0, 20); // Show max 20 results
+	const displaySessions = filteredSessions.slice(scrollOffset, scrollOffset + maxVisibleRows);
 
 	// Helper function to get relative time
 	const getRelativeTime = (date: Date): string => {
@@ -94,46 +124,76 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 		return '.../' + parts[parts.length - 1];
 	};
 
+	// Get message count for a session
+	const getMessageCount = (session: Session): number => {
+		return session.messages.filter(m => m.type === 'user' || m.type === 'assistant').length;
+	};
+
+	if (filteredSessions.length === 0) {
+		return (
+			<Box flexDirection="column" padding={1}>
+				<Box marginBottom={1}>
+					<Text bold color="cyan">Claude Session Search</Text>
+				</Box>
+
+				<Box marginBottom={1}>
+					<Text>Search: </Text>
+					<Text color="yellow">{query}</Text>
+					<Text color="gray">_</Text>
+				</Box>
+
+				<Box marginTop={1}>
+					<Text color="red">No sessions found{query ? ' matching your search' : ''}.</Text>
+				</Box>
+
+				<Box marginTop={1}>
+					<Text dimColor>
+						Type to search | Ctrl+C: Exit
+					</Text>
+				</Box>
+			</Box>
+		);
+	}
+
 	return (
 		<Box flexDirection="column" padding={1}>
 			<Box marginBottom={1}>
 				<Text bold color="cyan">Claude Session Search</Text>
+				<Text> </Text>
+				<Text dimColor>({filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''})</Text>
 			</Box>
 
 			<Box marginBottom={1}>
 				<Text>Search: </Text>
-				<Text color="yellow">{query}</Text>
-				<Text color="gray">_</Text>
-			</Box>
-
-			<Box marginBottom={1}>
-				<Text dimColor>
-					{filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''} found
-				</Text>
+				<Text color="yellow">{query || '(showing all)'}</Text>
+				<Text color="gray">{query ? '_' : ''}</Text>
 			</Box>
 
 			{/* Header row */}
 			<Box marginBottom={0}>
 				<Text dimColor bold>
-					{'  MESSAGE'.padEnd(67)} {'DIRECTORY'.padEnd(28)} {'TIME'}
+					{'  MESSAGE'.padEnd(60)} {'MSGS'.padEnd(6)} {'DIRECTORY'.padEnd(26)} {'TIME'}
 				</Text>
 			</Box>
 
 			<Box flexDirection="column">
-				{displaySessions.map((session, index) => {
-					const isSelected = index === selectedIndex;
-					const firstMessagePreview = session.firstMessage.slice(0, 60).replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-					const shortDir = shortenPath(session.directory, 25);
+				{displaySessions.map((session, displayIndex) => {
+					const actualIndex = scrollOffset + displayIndex;
+					const isSelected = actualIndex === selectedIndex;
+					const firstMessagePreview = session.firstMessage.slice(0, 53).replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+					const shortDir = shortenPath(session.directory, 24);
 					const relTime = getRelativeTime(session.timestamp);
+					const msgCount = getMessageCount(session);
 
-					const messageCol = (firstMessagePreview + (firstMessagePreview.length < session.firstMessage.length ? '...' : '')).padEnd(65);
-					const dirCol = shortDir.padEnd(28);
+					const messageCol = (firstMessagePreview + (firstMessagePreview.length < session.firstMessage.length ? '...' : '')).padEnd(58);
+					const msgCountCol = msgCount.toString().padEnd(6);
+					const dirCol = shortDir.padEnd(26);
 					const timeCol = relTime.padEnd(8);
 
 					return (
 						<Box key={session.id}>
 							<Text backgroundColor={isSelected ? 'blue' : undefined} color={isSelected ? 'white' : undefined}>
-								{isSelected ? '> ' : '  '}{messageCol} <Text dimColor={!isSelected}>{dirCol}</Text> <Text color={isSelected ? 'white' : 'yellow'}>{timeCol}</Text>
+								{isSelected ? '> ' : '  '}{messageCol} <Text dimColor={!isSelected}>{msgCountCol}</Text> <Text dimColor={!isSelected}>{dirCol}</Text> <Text color={isSelected ? 'white' : 'yellow'}>{timeCol}</Text>
 							</Text>
 						</Box>
 					);
@@ -142,18 +202,33 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 
 			{displaySessions.length > 0 && (
 				<Box marginTop={1} flexDirection="column">
+					<Box>
+						<Text dimColor>
+							Full path: <Text color="green">{filteredSessions[selectedIndex].directory}</Text>
+						</Text>
+					</Box>
+					<Box>
+						<Text dimColor>
+							Date: {filteredSessions[selectedIndex].timestamp.toLocaleString()}
+							{' • '}
+							{getMessageCount(filteredSessions[selectedIndex])} messages
+						</Text>
+					</Box>
+				</Box>
+			)}
+
+			{/* Scroll indicator */}
+			{filteredSessions.length > maxVisibleRows && (
+				<Box marginTop={0}>
 					<Text dimColor>
-						Full path: {displaySessions[selectedIndex].directory}
-					</Text>
-					<Text dimColor>
-						Date: {displaySessions[selectedIndex].timestamp.toLocaleString()}
+						Showing {scrollOffset + 1}-{Math.min(scrollOffset + maxVisibleRows, filteredSessions.length)} of {filteredSessions.length}
 					</Text>
 				</Box>
 			)}
 
 			<Box marginTop={1}>
 				<Text dimColor>
-					↑/↓: Navigate | Enter: View Details | Ctrl+C: Exit
+					↑/↓: Navigate | Ctrl+U/D: Half-page | g/G: Top/Bottom | Enter: Details | Ctrl+W: Delete word | Ctrl+C: Exit
 				</Text>
 			</Box>
 		</Box>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Text, useInput } from 'ink';
+import { Box, Text, useInput, useStdout } from 'ink';
 import { Session } from '../utils/sessionScanner.js';
 import { spawn } from 'child_process';
 
@@ -11,27 +11,42 @@ interface DetailViewProps {
 
 export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 	const [scrollOffset, setScrollOffset] = useState(0);
+	const { stdout } = useStdout();
 
 	// Get user and assistant messages only (skip file-history-snapshot and other system messages)
 	const conversationMessages = session.messages.filter(
 		msg => msg.type === 'user' || msg.type === 'assistant'
 	);
 
-	const maxScroll = Math.max(0, conversationMessages.length - 10);
+	// Calculate available space for messages
+	const terminalHeight = stdout?.rows || 24;
+	const terminalWidth = stdout?.columns || 120;
+	const uiOverhead = 11; // Header, metadata, footer, etc.
+	const maxVisibleMessages = Math.max(5, terminalHeight - uiOverhead);
+
+	const maxScroll = Math.max(0, conversationMessages.length - maxVisibleMessages);
 
 	useInput((input, key) => {
 		if (key.escape) {
 			onBack();
 		} else if (key.return) {
 			onLaunch(session);
-		} else if (key.upArrow) {
+		} else if (key.upArrow || (key.ctrl && input === 'k')) {
 			setScrollOffset(prev => Math.max(0, prev - 1));
-		} else if (key.downArrow) {
+		} else if (key.downArrow || (key.ctrl && input === 'j')) {
 			setScrollOffset(prev => Math.min(maxScroll, prev + 1));
+		} else if (key.pageUp || (key.ctrl && input === 'u')) {
+			setScrollOffset(prev => Math.max(0, prev - Math.floor(maxVisibleMessages / 2)));
+		} else if (key.pageDown || (key.ctrl && input === 'd')) {
+			setScrollOffset(prev => Math.min(maxScroll, prev + Math.floor(maxVisibleMessages / 2)));
+		} else if (key.ctrl && input === 'g') {
+			setScrollOffset(0);
+		} else if (key.shift && input === 'G') {
+			setScrollOffset(maxScroll);
 		}
 	});
 
-	const visibleMessages = conversationMessages.slice(scrollOffset, scrollOffset + 10);
+	const visibleMessages = conversationMessages.slice(scrollOffset, scrollOffset + maxVisibleMessages);
 
 	return (
 		<Box flexDirection="column" padding={1}>
@@ -74,36 +89,39 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 						textContent = content
 							.map(item => {
 								if ('text' in item) return item.text;
-								if ('thinking' in item) return `[thinking: ${item.thinking?.slice(0, 100)}...]`;
+								if ('thinking' in item) return `[thinking]`;
 								return '';
 							})
 							.filter(Boolean)
 							.join(' ');
 					}
 
-					const preview = textContent.slice(0, 120).replace(/\n/g, ' ');
+					// Clean up the text content
+					const cleanText = textContent.replace(/\s+/g, ' ').trim();
+					const maxPreviewLength = Math.min(terminalWidth - 15, 150);
+					const preview = cleanText.slice(0, maxPreviewLength).replace(/\n/g, ' ');
 					const roleColor = role === 'user' ? 'yellow' : role === 'assistant' ? 'blue' : 'gray';
 
 					return (
 						<Box key={msg.uuid || index} marginBottom={0}>
 							<Text color={roleColor} bold>{role.padEnd(10)}</Text>
-							<Text> {preview}{preview.length < textContent.length && '...'}</Text>
+							<Text> {preview}{preview.length < cleanText.length && '...'}</Text>
 						</Box>
 					);
 				})}
 			</Box>
 
-			{conversationMessages.length > 10 && (
+			{conversationMessages.length > maxVisibleMessages && (
 				<Box marginBottom={1}>
 					<Text dimColor>
-						Showing {scrollOffset + 1}-{Math.min(scrollOffset + 10, conversationMessages.length)} of {conversationMessages.length} messages
+						Showing {scrollOffset + 1}-{Math.min(scrollOffset + maxVisibleMessages, conversationMessages.length)} of {conversationMessages.length} messages
 					</Text>
 				</Box>
 			)}
 
 			<Box marginTop={1}>
 				<Text dimColor>
-					↑/↓: Scroll | Enter: Launch Session | Esc: Back to Search | Ctrl+C: Exit
+					↑/↓: Scroll | Ctrl+U/D: Half-page | g/G: Top/Bottom | Enter: Launch | Esc: Back | Ctrl+C: Exit
 				</Text>
 			</Box>
 		</Box>

@@ -9,6 +9,10 @@ A TUI (Terminal User Interface) tool for searching and navigating Claude Code se
 - 📊 Interactive search results with keyboard navigation
 - 📄 Detailed view of session conversations
 - 🚀 Launch sessions directly with `--dangerously-skip-permissions`
+- 📐 Responsive to terminal size - automatically adjusts display
+- 🧹 Smart filtering - removes warmup sessions and system messages
+- 📈 Message counts - see conversation length at a glance
+- ⌨️ Vim-style keybindings (hjkl, Ctrl+U/D, gg/G)
 
 ## Installation
 
@@ -35,13 +39,19 @@ claude-sessions
 ### Keyboard Shortcuts
 
 #### Search View
-- **Type**: Search sessions
-- **↑/↓**: Navigate through results
+- **Type**: Search sessions (fuzzy search on message content and directory)
+- **↑/↓ or Ctrl+K/J**: Navigate through results
+- **Ctrl+U/D**: Half-page up/down
+- **Ctrl+G / Shift+G**: Jump to top/bottom
+- **Ctrl+W**: Delete last word in search
+- **Backspace**: Delete last character
 - **Enter**: View session details
 - **Ctrl+C**: Exit
 
 #### Detail View
-- **↑/↓**: Scroll through messages
+- **↑/↓ or Ctrl+K/J**: Scroll through messages
+- **Ctrl+U/D**: Half-page up/down
+- **Ctrl+G / Shift+G**: Jump to top/bottom
 - **Enter**: Launch session (drops into Claude with current session)
 - **Esc**: Back to search
 - **Ctrl+C**: Exit
@@ -49,6 +59,14 @@ claude-sessions
 ## How it works
 
 The tool scans `~/.claude/projects/` for all session files, indexes their content, and provides a fuzzy search interface. Sessions from directories closer to your current working directory are prioritized in the results.
+
+The output includes:
+- **MESSAGE**: First message from the session (truncated to fit)
+- **MSGS**: Number of conversation messages in the session
+- **DIRECTORY**: Shortened directory path (last 2-3 segments)
+- **TIME**: Relative time (e.g., "2d ago", "3h ago")
+
+System messages like "Warmup", "claim", and command invocations are automatically filtered out.
 
 ## License
 
