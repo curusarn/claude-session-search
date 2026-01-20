@@ -42,9 +42,10 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 	// Calculate available space for messages
 	const terminalHeight = stdout?.rows || 24;
 	const terminalWidth = stdout?.columns || 120;
-	// Overhead: Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + preview section (6) + footer (2) + padding (2)
-	const uiOverhead = 21;
+	// Overhead: Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + preview section (8) + footer (2) + padding (2)
+	const uiOverhead = 23;
 	const maxVisibleMessages = Math.max(3, terminalHeight - uiOverhead);
+	const previewMaxLines = 3; // Limit preview to 3 lines
 
 	const maxScroll = Math.max(0, conversationMessages.length - maxVisibleMessages);
 
@@ -207,10 +208,19 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 							{selectedMessage.message?.role || selectedMessage.type} ({selectedMessageIndex + 1}/{conversationMessages.length})
 						</Text>
 					</Box>
-					<Box flexDirection="column">
+					<Box flexDirection="column" height={previewMaxLines}>
 						<Text>
-							{getFullTextContent(selectedMessage).split('\n').slice(0, 4).join('\n')}
-							{getFullTextContent(selectedMessage).split('\n').length > 4 && '\n...'}
+							{(() => {
+								const fullText = getFullTextContent(selectedMessage);
+								const lines = fullText.split('\n').slice(0, previewMaxLines);
+								const truncated = lines.map(line =>
+									line.length > terminalWidth - 10
+										? line.slice(0, terminalWidth - 13) + '...'
+										: line
+								);
+								const needsEllipsis = fullText.split('\n').length > previewMaxLines;
+								return truncated.join('\n') + (needsEllipsis ? '\n...' : '');
+							})()}
 						</Text>
 					</Box>
 				</Box>
