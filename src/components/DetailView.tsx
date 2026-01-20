@@ -24,8 +24,8 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 
 		if (Array.isArray(content)) {
 			return content.some(item =>
-				(item.text && item.text.trim().length > 0) ||
-				(item.thinking && item.thinking.trim().length > 0)
+				(item.text && item.text.trim().length > 0)
+				// Skip thinking blocks - only count actual text content
 			);
 		}
 
@@ -110,7 +110,7 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 						textContent = content
 							.map(item => {
 								if ('text' in item) return item.text;
-								if ('thinking' in item) return `[thinking]`;
+								// Skip thinking blocks entirely
 								return '';
 							})
 							.filter(Boolean)
@@ -156,7 +156,7 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 
 			<Box marginTop={1}>
 				<Text dimColor>
-					↑/↓: Scroll | Ctrl+U/D: Half-page | g/G: Top/Bottom | Enter: Launch | Esc: Back | Ctrl+C: Exit
+					↑/↓: Scroll | Ctrl+U/D: Half-page | g/G: Top/Bottom | Enter: Fork in Claude | Esc: Back | Ctrl+C: Exit
 				</Text>
 			</Box>
 		</Box>
