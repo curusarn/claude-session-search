@@ -1,0 +1,33 @@
+{
+  "name": "claude-session-search",
+  "version": "1.0.0",
+  "description": "TUI tool for searching Claude sessions",
+  "type": "module",
+  "bin": {
+    "claude-sessions": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.tsx",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "claude",
+    "search",
+    "tui",
+    "terminal"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "fuse.js": "^7.0.0",
+    "ink": "^5.0.1",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/react": "^18.3.18",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
