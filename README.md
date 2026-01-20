@@ -52,13 +52,20 @@ claude-sessions
 - **↑/↓ or Ctrl+K/J**: Scroll through messages
 - **Ctrl+U/D**: Half-page up/down
 - **Ctrl+G / Shift+G**: Jump to top/bottom
-- **Enter**: Launch session (drops into Claude with current session)
+- **Enter**: Launch session (forks and resumes in Claude, preserving original)
 - **Esc**: Back to search
 - **Ctrl+C**: Exit
 
 ## How it works
 
 The tool scans `~/.claude/projects/` for all session files, indexes their content, and provides a fuzzy search interface.
+
+### Session Forking
+
+When you launch a session from the detail view, the tool uses `--fork-session` to create a new session based on the selected one. This means:
+- The original session remains unchanged and can be referenced later
+- A new session ID is created for your continued work
+- You can safely explore and modify without affecting the historical record
 
 ### Smart Scoring Algorithm
 
