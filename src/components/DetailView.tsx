@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput, useStdout } from 'ink';
 import { Session } from '../utils/sessionScanner.js';
 import { spawn } from 'child_process';
@@ -13,6 +13,14 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 	const [scrollOffset, setScrollOffset] = useState(0);
 	const [selectedMessageIndex, setSelectedMessageIndex] = useState(0);
 	const { stdout } = useStdout();
+
+	// Calculate available space for messages
+	const terminalHeight = stdout?.rows || 24;
+	const terminalWidth = stdout?.columns || 120;
+	// Overhead: Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + preview section (14) + footer (2) + padding (2)
+	const uiOverhead = 29;
+	const maxVisibleMessages = Math.max(3, terminalHeight - uiOverhead);
+	const previewMaxLines = 10; // Show up to 10 lines in preview
 
 	// Helper function to check if a message has displayable text content
 	const hasTextContent = (msg: any): boolean => {
@@ -39,15 +47,24 @@ export function DetailView({ session, onBack, onLaunch }: DetailViewProps) {
 		msg => (msg.type === 'user' || msg.type === 'assistant') && hasTextContent(msg)
 	);
 
-	// Calculate available space for messages
-	const terminalHeight = stdout?.rows || 24;
-	const terminalWidth = stdout?.columns || 120;
-	// Overhead: Header (2) + metadata (5) + "Conversation:" (2) + scroll indicator (2) + preview section (14) + footer (2) + padding (2)
-	const uiOverhead = 29;
-	const maxVisibleMessages = Math.max(3, terminalHeight - uiOverhead);
-	const previewMaxLines = 10; // Show up to 10 lines in preview
-
 	const maxScroll = Math.max(0, conversationMessages.length - maxVisibleMessages);
+
+	// Adjust scroll position on terminal resize to keep selection visible
+	useEffect(() => {
+		if (selectedMessageIndex < scrollOffset) {
+			setScrollOffset(selectedMessageIndex);
+		} else if (selectedMessageIndex >= scrollOffset + maxVisibleMessages) {
+			setScrollOffset(Math.max(0, selectedMessageIndex - maxVisibleMessages + 1));
+		}
+		// Ensure scroll doesn't exceed bounds
+		if (scrollOffset > maxScroll) {
+			setScrollOffset(maxScroll);
+		}
+		// Ensure selection doesn't exceed bounds
+		if (selectedMessageIndex >= conversationMessages.length && conversationMessages.length > 0) {
+			setSelectedMessageIndex(conversationMessages.length - 1);
+		}
+	}, [terminalHeight, terminalWidth, maxVisibleMessages, selectedMessageIndex, scrollOffset, maxScroll, conversationMessages.length]);
 
 	useInput((input, key) => {
 		if (key.escape) {

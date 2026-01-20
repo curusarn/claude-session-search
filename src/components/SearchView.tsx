@@ -16,6 +16,26 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 	const [filteredSessions, setFilteredSessions] = useState<Session[]>(sessions);
 	const { stdout } = useStdout();
 
+	// Calculate available space for results
+	const terminalHeight = stdout?.rows || 24;
+	const terminalWidth = stdout?.columns || 120;
+	const uiOverhead = 8; // Header, search box, status, footer, etc.
+	const maxVisibleRows = Math.max(5, terminalHeight - uiOverhead);
+
+	// Adjust scroll position on terminal resize to keep selection visible
+	useEffect(() => {
+		if (selectedIndex < scrollOffset) {
+			setScrollOffset(selectedIndex);
+		} else if (selectedIndex >= scrollOffset + maxVisibleRows) {
+			setScrollOffset(Math.max(0, selectedIndex - maxVisibleRows + 1));
+		}
+		// Also ensure scroll doesn't exceed bounds
+		const maxScroll = Math.max(0, filteredSessions.length - maxVisibleRows);
+		if (scrollOffset > maxScroll) {
+			setScrollOffset(maxScroll);
+		}
+	}, [terminalHeight, terminalWidth, maxVisibleRows, selectedIndex, scrollOffset, filteredSessions.length]);
+
 	// Set up fuzzy search with combined scoring
 	useEffect(() => {
 		if (!query.trim()) {
@@ -73,12 +93,6 @@ export function SearchView({ sessions, onSelectSession, initialQuery = '' }: Sea
 			setSelectedIndex(filteredSessions.length - 1);
 		}
 	}, [filteredSessions, selectedIndex]);
-
-	// Calculate available space for results
-	const terminalHeight = stdout?.rows || 24;
-	const terminalWidth = stdout?.columns || 120;
-	const uiOverhead = 8; // Header, search box, status, footer, etc.
-	const maxVisibleRows = Math.max(5, terminalHeight - uiOverhead);
 
 	// Calculate responsive column widths with safety margin
 	const minWidth = 80;
